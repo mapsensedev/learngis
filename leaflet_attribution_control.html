@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Attribution Example</title>
+      <link rel = "stylesheet" href = "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"/>
+      <script src = "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+   </head>
+   
+   <body>
+      <div id = "map" style = "width: 900px; height: 580px"></div>
+      <script>
+         // Creating map options
+         var mapOptions = {
+            center: [17.385044, 78.486671],
+            zoom: 10,
+            attributionControl: false
+         }
+         var map = new L.map('map', mapOptions); // Creating a map object
+         
+         // Creating a Layer object
+         var layer = new L.TileLayer('https://api.mapbox.com/styles/v1/navjothbn/ck8hfi72t012k1iohx5r805lg/tiles/256/{z}/{x}/{y}@2x?access_token=YOUR_API_KEY');
+         map.addLayer(layer);    // Adding layer to the map
+         
+         // Attribution options
+         var attrOptions = {
+            prefix: 'attribution sample'
+         };
+         
+         // Creating an attribution
+         var attr = L.control.attribution(attrOptions);
+         attr.addTo(map);  // Adding attribution to the map
+      </script>
+   </body>
+   
+</html>>
