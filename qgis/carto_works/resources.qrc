@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/carto_works" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
