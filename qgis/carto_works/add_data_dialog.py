@@ -34,18 +34,23 @@ class Ui_addDataDialogBase(object):
         self.pushButton.setObjectName("pushButton")
 
         self.retranslateUi(addDataDialogBase)
-        self.button_box.accepted.connect(addDataDialogBase.accept)
+
         self.button_box.accepted.connect(self.show_layers)
+        self.button_box.accepted.connect(addDataDialogBase.accept)
 
         self.button_box.rejected.connect(addDataDialogBase.reject)
         QtCore.QMetaObject.connectSlotsByName(addDataDialogBase)
         self.pushButton.clicked.connect(self.select_input_file)
 
+    #method for getting folder path
+
     def select_input_file(self):
-        filename, _filter = QFileDialog.getSaveFileName(
-          None, "Select   input file ","*.")
-        filepath=filename[:-2]
+        filename = QFileDialog.getExistingDirectory()
+        filepath=filename+"/"
         self.lineEdit.setText(filepath)
+
+    #method for showing all layers inside a folder
+
     def show_layers(self):
         fileName1 = self.lineEdit.text()
 

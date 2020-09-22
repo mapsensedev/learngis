@@ -185,10 +185,10 @@ class addData:
 
     def select_input_file(self):
 
-        filename, _filter = QFileDialog.getSaveFileName(
-          self.dlg, "Select   input file ","*.")
+        filename, _filter = QFileDialog.getOpenFileName(
+          this, "Select   input file ","*.")
         filepath=filename[:-2]
-        self.dlg.lineEdit.setText(filepath)
+        self.dlg.lineEdit.setText(fil)
 
 
 

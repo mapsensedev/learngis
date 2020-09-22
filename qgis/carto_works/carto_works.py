@@ -216,7 +216,6 @@ class cartoWorks:
 
 #                  Second dialogbox functionality code starts
 
-
 #                  Second dialogbox functionality code ends
             else:
                 self.iface.messageBar().pushMessage(
