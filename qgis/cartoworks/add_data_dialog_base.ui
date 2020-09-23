@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>486</width>
+    <height>286</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,10 +16,10 @@
   <widget class="QDialogButtonBox" name="button_box">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>240</y>
-     <width>341</width>
-     <height>32</height>
+     <x>20</x>
+     <y>241</y>
+     <width>441</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="orientation">
@@ -32,37 +32,42 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>80</y>
-     <width>59</width>
-     <height>16</height>
+     <x>40</x>
+     <y>124</y>
+     <width>81</width>
+     <height>20</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
    <property name="text">
-    <string>add data</string>
+    <string>Folder Path</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="lineEdit">
    <property name="geometry">
     <rect>
-     <x>90</x>
-     <y>80</y>
+     <x>130</x>
+     <y>120</y>
      <width>251</width>
-     <height>21</height>
+     <height>28</height>
     </rect>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>80</y>
-     <width>51</width>
-     <height>32</height>
+     <x>380</x>
+     <y>118</y>
+     <width>80</width>
+     <height>35</height>
     </rect>
    </property>
    <property name="text">
-    <string>...</string>
+    <string>Browse</string>
    </property>
   </widget>
  </widget>

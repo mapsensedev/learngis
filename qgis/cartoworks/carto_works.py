@@ -33,12 +33,14 @@ from .carto_works_dialog import cartoWorksDialog
 import os.path, glob
 from .add_data_dialog import Ui_addDataDialogBase
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
-
+import requests
 
 class cartoWorks:
-    """QGIS Plugin Implementation."""
 
+    """QGIS Plugin Implementation."""
+    sessionToken=""
     def __init__(self, iface):
+
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -173,6 +175,11 @@ class cartoWorks:
         # will be set False in run()
         self.first_start = True
 
+    def _addDataDialog(self):
+        self.window=QtWidgets.QDialog()
+        self.ui=Ui_addDataDialogBase()
+        self.ui.setupUi(self.window)
+        self.window.show()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -190,6 +197,11 @@ class cartoWorks:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
             self.first_start = False
+
+        if self.sessionToken:
+            self._addDataDialog()
+            return True
+        else:
             self.dlg = cartoWorksDialog()
 
         # show the dialog
@@ -203,12 +215,26 @@ class cartoWorks:
             username = self.dlg.username_field.text()
             password = self.dlg.password_field.text()
 
-            if(username=="gisadmin" and password=="gisadmin123"):
-                self.window=QtWidgets.QDialog()
-                self.ui=Ui_addDataDialogBase()
-                self.ui.setupUi(self.window)
+            url = "https://reqres.in/api/login"
 
-                self.window.show()
+#            payload = {"email":""+username+"","password":""+password+""}
+
+            payload = "{\n    \"email\": \""+username+"\",\n    \"password\": \""+password+"\"\n}"
+            headers = {
+                'content-type': "application/json",
+                'cache-control': "no-cache",
+                'postman-token': "5882dfa1-dc13-68f5-1970-5e6bf22594ad"
+                }
+
+#            response = requests.request("POST", url, data=payload, headers=headers, params=querystring)
+            response = requests.request("POST", url, data=payload, headers=headers)
+            status_value=response.status_code
+            response_value=response.text
+
+            if(status_value==200):
+                self.sessionToken=response_value
+                self._addDataDialog()
+
 
                 self.iface.messageBar().pushMessage(
                   "Success", "Loggedin sucessfully ",

@@ -13,38 +13,43 @@ from qgis.PyQt.QtWidgets import QAction, QFileDialog
 import os.path, glob
 from qgis.core import QgsProject
 from qgis.utils import iface
+import os
 
 class Ui_addDataDialogBase(object):
     def setupUi(self, addDataDialogBase):
         addDataDialogBase.setObjectName("addDataDialogBase")
-        addDataDialogBase.resize(400, 300)
+        addDataDialogBase.resize(486, 286)
         self.button_box = QtWidgets.QDialogButtonBox(addDataDialogBase)
-        self.button_box.setGeometry(QtCore.QRect(30, 240, 341, 32))
+        self.button_box.setGeometry(QtCore.QRect(20, 241, 441, 31))
         self.button_box.setOrientation(QtCore.Qt.Horizontal)
         self.button_box.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.button_box.setObjectName("button_box")
         self.label = QtWidgets.QLabel(addDataDialogBase)
-        self.label.setGeometry(QtCore.QRect(20, 80, 59, 16))
+        self.label.setGeometry(QtCore.QRect(40, 124, 81, 20))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.label.setFont(font)
         self.label.setObjectName("label")
         self.lineEdit = QtWidgets.QLineEdit(addDataDialogBase)
-        self.lineEdit.setGeometry(QtCore.QRect(90, 80, 251, 21))
+        self.lineEdit.setGeometry(QtCore.QRect(130, 120, 251, 28))
         self.lineEdit.setObjectName("lineEdit")
         self.pushButton = QtWidgets.QPushButton(addDataDialogBase)
-        self.pushButton.setGeometry(QtCore.QRect(340, 80, 51, 32))
+        self.pushButton.setGeometry(QtCore.QRect(380, 118, 80, 35))
         self.pushButton.setObjectName("pushButton")
 
         self.retranslateUi(addDataDialogBase)
-
         self.button_box.accepted.connect(self.show_layers)
         self.button_box.accepted.connect(addDataDialogBase.accept)
-
         self.button_box.rejected.connect(addDataDialogBase.reject)
         QtCore.QMetaObject.connectSlotsByName(addDataDialogBase)
         self.pushButton.clicked.connect(self.select_input_file)
 
-    #method for getting folder path
+        envi_path=os.environ['HOME']
+
+        self.lineEdit.setText(envi_path)
 
     def select_input_file(self):
+
         filename = QFileDialog.getExistingDirectory()
         filepath=filename+"/"
         self.lineEdit.setText(filepath)
@@ -70,17 +75,11 @@ class Ui_addDataDialogBase(object):
             else:
                 continue
 
-
-
-
-
-
-
     def retranslateUi(self, addDataDialogBase):
         _translate = QtCore.QCoreApplication.translate
         addDataDialogBase.setWindowTitle(_translate("addDataDialogBase", "adddata"))
-        self.label.setText(_translate("addDataDialogBase", "add data"))
-        self.pushButton.setText(_translate("addDataDialogBase", "..."))
+        self.label.setText(_translate("addDataDialogBase", "Folder Path"))
+        self.pushButton.setText(_translate("addDataDialogBase", "Browse"))
 
 
 if __name__ == "__main__":
