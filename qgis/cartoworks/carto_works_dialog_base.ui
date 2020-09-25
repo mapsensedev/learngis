@@ -132,7 +132,10 @@
     <enum>Qt::LeftToRight</enum>
    </property>
    <property name="text">
-    <string>SITERECON</string>
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="resources.qrc">:/plugins/carto_works/carto_logo.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -142,7 +145,9 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>button_box</sender>
