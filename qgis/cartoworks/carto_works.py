@@ -34,6 +34,7 @@ import os.path, glob
 from .add_data_dialog import Ui_addDataDialogBase
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
 import requests
+import json
 
 class cartoWorks:
 
@@ -215,24 +216,44 @@ class cartoWorks:
             username = self.dlg.username_field.text()
             password = self.dlg.password_field.text()
 
-            url = "https://reqres.in/api/login"
+
+            url ="http://18.225.10.202:8000/api/user/login/"
+            data={
+                "email" :""+username+"",
+                "password": ""+password+""
+            }
+
+            r = requests.post(url, data=data)
+            response_value=r.text
+            status_value=r.status_code
+            print("status value",status_value)
+            print("response value",response_value)
+
+            data = json.loads(response_value)
+            gettoken=data.get('token')
+            print("get value",data.get('token'))
+
+
+
+#            url = "https://reqres.in/api/login"
 
 #            payload = {"email":""+username+"","password":""+password+""}
 
-            payload = "{\n    \"email\": \""+username+"\",\n    \"password\": \""+password+"\"\n}"
-            headers = {
-                'content-type': "application/json",
-                'cache-control': "no-cache",
-                'postman-token': "5882dfa1-dc13-68f5-1970-5e6bf22594ad"
-                }
+#            payload = "{\n    \"email\": \""+username+"\",\n    \"password\": \""+password+"\"\n}"
+#            headers = {
+#                'content-type': "application/json",
+#                'cache-control': "no-cache",
+#                'postman-token': "5882dfa1-dc13-68f5-1970-5e6bf22594ad"
+#                }
 
 #            response = requests.request("POST", url, data=payload, headers=headers, params=querystring)
-            response = requests.request("POST", url, data=payload, headers=headers)
-            status_value=response.status_code
-            response_value=response.text
+#            response = requests.request("POST", url, data=payload, headers=headers)
+#            status_value=response.status_code
+#            response_value=response.text
 
-            if(status_value==200):
-                self.sessionToken=response_value
+            if(status_value==200  and gettoken is not None):
+                print("data value",data["token"])
+                self.sessionToken=data["token"]
                 self._addDataDialog()
 
 
