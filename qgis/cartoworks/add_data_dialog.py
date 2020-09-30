@@ -11,9 +11,11 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
 import os.path, glob
-from qgis.core import QgsProject
+from qgis.core import QgsProject,QgsVectorDataProvider,QgsField,QgsExpressionContextUtils,QgsExpressionContext
+from PyQt5.QtCore import QVariant
 from qgis.utils import iface
 import os
+import processing
 
 class Ui_addDataDialogBase(object):
     def setupUi(self, addDataDialogBase):
@@ -64,6 +66,9 @@ class Ui_addDataDialogBase(object):
         filepath=filename+"/"
         self.lineEdit.setText(filepath)
 
+    def unload(self):
+        # remove toolbar on plugin unload
+        del self.toolbar
 
 
 
@@ -82,6 +87,122 @@ class Ui_addDataDialogBase(object):
         self.lineEdit.setText(directory)
 
     #method for showing all layers inside a folder
+
+    def addToolBar(self):
+        # Add toolbar
+        self.toolbar = iface.addToolBar("Siterecon toolbar")
+
+        self.lengthcal = QAction(QIcon(":/plugins/carto_works/icon.png"),
+                                      QCoreApplication.translate("MyPlugin", "Length Calculation"),
+                                      iface.mainWindow())
+        self.areacal = QAction(QIcon(":/plugins/carto_works/icon.png"),
+                                      QCoreApplication.translate("MyPlugin", "Area Calculation"),
+                                      iface.mainWindow())
+        self.multiparttosinglepart = QAction(QIcon(":/plugins/carto_works/icon.png"),
+                                      QCoreApplication.translate("MyPlugin", "Multipart to singlepart"),
+                                      iface.mainWindow())
+
+               # Connect action signals to slots
+        self.lengthcal.triggered.connect(self.calculateLength)
+
+               # Add actions to the toolbar
+        self.toolbar.addAction(self.lengthcal)
+        self.areacal.triggered.connect(self.calculateArea)
+
+               # Add actions to the toolbar
+        self.toolbar.addAction(self.areacal)
+
+
+        self.multiparttosinglepart.triggered.connect(self.multipartToSinglepart)
+
+               # Add actions to the toolbar
+        self.toolbar.addAction(self.multiparttosinglepart)
+
+
+    def multipartToSinglepart(self):
+
+#          for layer in iface.mapCanvas().layers():
+#              processing.runAndLoadResults("native:dissolve", {'INPUT':layer,
+#                      'FIELD':['Geometry'],
+#                      'OUTPUT':'memory:'})
+
+
+
+
+
+
+        fileName1 = self.lineEdit.text()
+        for file in glob.glob(fileName1+"*"):
+            uri = file
+            lyr=uri[-4:]
+            lyr1=uri[-8:]
+            if(lyr==".shp" or lyr1==".geojson"):
+                print("uri",uri)
+                processing.run("qgis:multiparttosingleparts", {'INPUT': uri, 'OUTPUT': uri })
+
+
+
+
+
+
+
+
+    def calculateLength(self):
+        for layer in iface.mapCanvas().layers():
+            print(layer.name())
+#            layer = iface.activeLayer()
+            length = 0
+            #da = QgsDistanceArea()
+            #da.setEllipsoid("WGS84")
+            field_index = layer.fields().indexFromName("Length")
+            caps=layer.dataProvider().capabilities()
+            if caps & QgsVectorDataProvider.AddAttributes and field_index==-1:
+                res = layer.dataProvider().addAttributes([QgsField("Length", QVariant.Double)])
+                layer.updateFields()
+                context = QgsExpressionContext()
+                context.appendScopes(QgsExpressionContextUtils.globalProjectLayerScopes(layer))
+                for element in layer.getFeatures():
+
+                     geom = element.geometry()
+                     length += geom.length()
+                #     print(length)
+                     context.setFeature(element)
+                     element['Length']=length
+                     layer.updateFeature(element)
+
+    def calculateArea(self):
+        for layer in iface.mapCanvas().layers():
+            print(layer.name())
+#            layer = iface.activeLayer()
+            area = 0
+            #da = QgsDistanceArea()
+            #da.setEllipsoid("WGS84")
+            field_index = layer.fields().indexFromName("Area")
+            caps=layer.dataProvider().capabilities()
+#            geom1 = layer.geometry()
+#            geom1.type() == QgsWkbTypes.LineGeometry
+            if caps & QgsVectorDataProvider.AddAttributes and field_index==-1:
+                res = layer.dataProvider().addAttributes([QgsField("Area", QVariant.Double)])
+                layer.updateFields()
+                context = QgsExpressionContext()
+                context.appendScopes(QgsExpressionContextUtils.globalProjectLayerScopes(layer))
+                for element in layer.getFeatures():
+
+                     geom = element.geometry()
+                     area += geom.area()
+                #     print(length)
+                     context.setFeature(element)
+                     element['Area']=area
+                     layer.updateFeature(element)
+
+
+
+
+
+        #units = da.lengthUnits()
+        #print("units",units)
+
+
 
     def show_layers(self):
 
@@ -103,6 +224,8 @@ class Ui_addDataDialogBase(object):
 
             else:
                 continue
+
+        self.addToolBar()
 
     def retranslateUi(self, addDataDialogBase):
         _translate = QtCore.QCoreApplication.translate

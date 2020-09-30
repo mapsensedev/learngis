@@ -256,9 +256,8 @@ class cartoWorks:
                 self.sessionToken=data["token"]
                 self._addDataDialog()
 
-
                 self.iface.messageBar().pushMessage(
-                  "Success", "Loggedin sucessfully ",
+                  "Success", "Loggedin sucessfully",
                   level=Qgis.Success, duration=3)
 
 #                  Second dialogbox functionality code starts
