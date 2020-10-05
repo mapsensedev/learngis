@@ -11,12 +11,12 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
 import os.path, glob
-from qgis.core import QgsProject,QgsVectorDataProvider,QgsField,QgsExpressionContextUtils,QgsExpressionContext
+from qgis.core import QgsProject,QgsVectorDataProvider,QgsField,QgsExpressionContextUtils,QgsExpressionContext,QgsGeometry, QgsWkbTypes
 from PyQt5.QtCore import QVariant
 from qgis.utils import iface
 import os
 import processing
-
+from qgis.core import  QgsFeatureRequest, QgsFeature, QgsGeometry, QgsWkbTypes
 class Ui_addDataDialogBase(object):
     def setupUi(self, addDataDialogBase):
         addDataDialogBase.setObjectName("addDataDialogBase")
@@ -92,13 +92,13 @@ class Ui_addDataDialogBase(object):
         # Add toolbar
         self.toolbar = iface.addToolBar("Siterecon toolbar")
 
-        self.lengthcal = QAction(QIcon(":/plugins/carto_works/icon.png"),
+        self.lengthcal = QAction(QIcon(":/plugins/cartoworks/length.png"),
                                       QCoreApplication.translate("MyPlugin", "Length Calculation"),
                                       iface.mainWindow())
-        self.areacal = QAction(QIcon(":/plugins/carto_works/icon.png"),
+        self.areacal = QAction(QIcon(":/plugins/cartoworks/area_icon.png"),
                                       QCoreApplication.translate("MyPlugin", "Area Calculation"),
                                       iface.mainWindow())
-        self.multiparttosinglepart = QAction(QIcon(":/plugins/carto_works/icon.png"),
+        self.multiparttosinglepart = QAction(QIcon(":/plugins/cartoworks/icon.png"),
                                       QCoreApplication.translate("MyPlugin", "Multipart to singlepart"),
                                       iface.mainWindow())
 
@@ -142,11 +142,6 @@ class Ui_addDataDialogBase(object):
 
 
 
-
-
-
-
-
     def calculateLength(self):
         for layer in iface.mapCanvas().layers():
             print(layer.name())
@@ -179,9 +174,20 @@ class Ui_addDataDialogBase(object):
             #da.setEllipsoid("WGS84")
             field_index = layer.fields().indexFromName("Area")
             caps=layer.dataProvider().capabilities()
-#            geom1 = layer.geometry()
-#            geom1.type() == QgsWkbTypes.LineGeometry
-            if caps & QgsVectorDataProvider.AddAttributes and field_index==-1:
+
+            geometrycode=0
+
+            for element1 in layer.getFeatures():
+
+                 geom1 = element1.geometry()
+
+                 if(geom1.type() == QgsWkbTypes.LineGeometry):
+                     geometrycode=1
+                     break
+
+
+
+            if caps & QgsVectorDataProvider.AddAttributes and field_index==-1 and geometrycode==0:
                 res = layer.dataProvider().addAttributes([QgsField("Area", QVariant.Double)])
                 layer.updateFields()
                 context = QgsExpressionContext()
@@ -190,10 +196,18 @@ class Ui_addDataDialogBase(object):
 
                      geom = element.geometry()
                      area += geom.area()
+                     if(geom.type() == QgsWkbTypes.LineGeometry):
+                         continue
+                     else:
+                         context.setFeature(element)
+                         element['Area']=area
+                         layer.updateFeature(element)
+
                 #     print(length)
-                     context.setFeature(element)
-                     element['Area']=area
-                     layer.updateFeature(element)
+
+
+
+
 
 
 

@@ -1,6 +1,9 @@
 <RCC>
-    <qresource prefix="/plugins/carto_works">
+    <qresource prefix="/plugins/cartoworks">
         <file>icon.png</file>
         <file>carto_logo.png</file>
+        <file>area_icon.png</file>
+        <file>length.png</file>
     </qresource>
+    <qresource prefix="/new/prefix1"/>
 </RCC>
