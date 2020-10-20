@@ -1,0 +1,16 @@
+{
+  "name": "routeplanner",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "parcel ./app/*.html",
+    "build": "parcel build <your entry file>"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4"
+  },
+  "dependencies": {
+    "axios": "^0.20.0"
+  }
+}
