@@ -1,49 +1,33 @@
-import locations from './data/locations.json';
-
-import { addDraggableMarker } from './here/markers';
-import { addCircle, addPolyLine } from './here/geoShapes';
-
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 
-var platform = new H.service.Platform({
-  apikey: '71fC1FnumWqaRwJJ4IG_fxp5g4YQoUwaUcnh1tZmH4k',
-});
+import locations from './data/locations.json';
 
-const center = { lng: 77.1025, lat: 28.7041 };
+import { addPolyline } from './leaflet/polyline';
 
-var maptypes = platform.createDefaultLayers();
+const lat = 21.1458;
+const long = 79.0882;
 
-var map = new H.Map(document.getElementById('mapContainer'), maptypes.vector.normal.map, {
-  zoom: 10,
-  center,
-});
+const map = L.map('map').setView([lat, long], 5);
 
-// const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-// const provider = map.getBaseLayer().getProvider();
-// const router = platform.getRoutingService();
-// const geocoder = platform.getGeocodingService();
+const attribution =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-window.addEventListener('resize', () => map.getViewPort().resize());
+const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const tiles = L.tileLayer(tileUrl, { attribution });
+tiles.addTo(map);
+
+/*===================================================================================================*/
 
 let destinations = [];
-// let destinationsDos = [];
 
 locations.forEach((location, index) => {
   let key = `destination${index + 1}`;
   let value = `location_${index};${location.Latitude},${location.Longitude}`;
   destinations.push({ [key]: value });
-  // destinationsDos.push(`${key}:${value}`);
 });
 
-// console.log(...destinationsDos.join(',').split(' '));
-
-// addDraggableMarker(behavior, center, map);
-
-// addCircle(center, 8000, map);
-
-// addPolyLine(points, map);
-
-/*===============================================================================================*/
 const base = 'https://wse.ls.hereapi.com/2/findsequence.json';
 const mode_type = 'fastest'; //
 const transport_mode = 'car'; //
@@ -65,7 +49,13 @@ axios
     },
   })
   .then(function (response) {
-    console.log(response);
+    let latlngs = [];
+
+    response.data.results[0].waypoints.forEach((point) => {
+      latlngs.push([point.lat, point.lng]);
+    });
+
+    addPolyline(latlngs, map);
   })
   .catch(function (error) {
     console.log(error);
