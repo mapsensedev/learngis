@@ -1,10 +1,12 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
 import axios from 'axios';
 
 import locations from './data/locations.json';
 
-import { addPolyline } from './leaflet/polyline';
+import { addMarker } from '../src/leaflet/ui/markers';
+import { createRoute } from './leaflet/vectors/polylines';
 
 const lat = 21.1458;
 const long = 79.0882;
@@ -25,6 +27,7 @@ let destinations = [];
 locations.forEach((location, index) => {
   let key = `destination${index + 1}`;
   let value = `location_${index};${location.Latitude},${location.Longitude}`;
+  addMarker([location.Latitude, location.Longitude], 'normal', map);
   destinations.push({ [key]: value });
 });
 
@@ -55,7 +58,7 @@ axios
       latlngs.push([point.lat, point.lng]);
     });
 
-    addPolyline(latlngs, map);
+    createRoute(latlngs, map);
   })
   .catch(function (error) {
     console.log(error);

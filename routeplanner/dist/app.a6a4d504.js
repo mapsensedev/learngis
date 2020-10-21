@@ -16296,23 +16296,91 @@ module.exports = [{
   "Outage Details": "",
   "Business Status": ""
 }];
-},{}],"src/leaflet/polyline.js":[function(require,module,exports) {
+},{}],"../node_modules/leaflet.awesome-markers/dist/leaflet.awesome-markers.css":[function(require,module,exports) {
+
+        var reloadCSS = require('_css_loader');
+        module.hot.dispose(reloadCSS);
+        module.hot.accept(reloadCSS);
+      
+},{"./images\\markers-soft.png":[["markers-soft.8f64ce8b.png","../node_modules/leaflet.awesome-markers/dist/images/markers-soft.png"],"../node_modules/leaflet.awesome-markers/dist/images/markers-soft.png"],"./images\\markers-shadow.png":[["markers-shadow.4422936e.png","../node_modules/leaflet.awesome-markers/dist/images/markers-shadow.png"],"../node_modules/leaflet.awesome-markers/dist/images/markers-shadow.png"],"./images\\markers-soft@2x.png":[["markers-soft@2x.3fa37beb.png","../node_modules/leaflet.awesome-markers/dist/images/markers-soft@2x.png"],"../node_modules/leaflet.awesome-markers/dist/images/markers-soft@2x.png"],"./images\\markers-shadow@2x.png":[["markers-shadow@2x.a6bab106.png","../node_modules/leaflet.awesome-markers/dist/images/markers-shadow@2x.png"],"../node_modules/leaflet.awesome-markers/dist/images/markers-shadow@2x.png"],"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"../node_modules/leaflet.awesome-markers/dist/leaflet.awesome-markers.min.js":[function(require,module,exports) {
+/*
+  Leaflet.AwesomeMarkers, a plugin that adds colorful iconic markers for Leaflet, based on the Font Awesome icons
+  (c) 2012-2013, Lennard Voogdt
+
+  http://leafletjs.com
+  https://github.com/lvoogdt
+*//*global L*/(function(e,t,n){"use strict";L.AwesomeMarkers={};L.AwesomeMarkers.version="2.0.1";L.AwesomeMarkers.Icon=L.Icon.extend({options:{iconSize:[35,45],iconAnchor:[17,42],popupAnchor:[1,-32],shadowAnchor:[10,12],shadowSize:[36,16],className:"awesome-marker",prefix:"glyphicon",spinClass:"fa-spin",icon:"home",markerColor:"blue",iconColor:"white"},initialize:function(e){e=L.Util.setOptions(this,e)},createIcon:function(){var e=t.createElement("div"),n=this.options;n.icon&&(e.innerHTML=this._createInner());n.bgPos&&(e.style.backgroundPosition=-n.bgPos.x+"px "+ -n.bgPos.y+"px");this._setIconStyles(e,"icon-"+n.markerColor);return e},_createInner:function(){var e,t="",n="",r="",i=this.options;i.icon.slice(0,i.prefix.length+1)===i.prefix+"-"?e=i.icon:e=i.prefix+"-"+i.icon;i.spin&&typeof i.spinClass=="string"&&(t=i.spinClass);i.iconColor&&(i.iconColor==="white"||i.iconColor==="black"?n="icon-"+i.iconColor:r="style='color: "+i.iconColor+"' ");return"<i "+r+"class='"+i.prefix+" "+e+" "+t+" "+n+"'></i>"},_setIconStyles:function(e,t){var n=this.options,r=L.point(n[t==="shadow"?"shadowSize":"iconSize"]),i;t==="shadow"?i=L.point(n.shadowAnchor||n.iconAnchor):i=L.point(n.iconAnchor);!i&&r&&(i=r.divideBy(2,!0));e.className="awesome-marker-"+t+" "+n.className;if(i){e.style.marginLeft=-i.x+"px";e.style.marginTop=-i.y+"px"}if(r){e.style.width=r.x+"px";e.style.height=r.y+"px"}},createShadow:function(){var e=t.createElement("div");this._setIconStyles(e,"shadow");return e}});L.AwesomeMarkers.icon=function(e){return new L.AwesomeMarkers.Icon(e)}})(this,document);
+
+},{}],"src/leaflet/ui/markers.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.addPolyline = void 0;
+exports.addMarker = void 0;
 
-var addPolyline = function addPolyline(latlngs, map) {
+require("leaflet.awesome-markers/dist/leaflet.awesome-markers.css");
+
+require("leaflet.awesome-markers/dist/leaflet.awesome-markers.min.js");
+
+var addMarker = function addMarker(latlng, type, map) {
+  var awesomeMarker;
+
+  switch (type) {
+    case 'start':
+      awesomeMarker = L.AwesomeMarkers.icon({
+        icon: 'play',
+        prefix: 'fa',
+        markerColor: 'green'
+      });
+      break;
+
+    case 'end':
+      awesomeMarker = L.AwesomeMarkers.icon({
+        icon: 'stop',
+        prefix: 'fa',
+        markerColor: 'blue'
+      });
+      break;
+
+    default:
+      awesomeMarker = L.AwesomeMarkers.icon({
+        icon: 'car',
+        prefix: 'fa',
+        markerColor: 'gray'
+      });
+      break;
+  }
+
+  L.marker(latlng, {
+    icon: awesomeMarker
+  }).addTo(map);
+};
+
+exports.addMarker = addMarker;
+},{"leaflet.awesome-markers/dist/leaflet.awesome-markers.css":"../node_modules/leaflet.awesome-markers/dist/leaflet.awesome-markers.css","leaflet.awesome-markers/dist/leaflet.awesome-markers.min.js":"../node_modules/leaflet.awesome-markers/dist/leaflet.awesome-markers.min.js"}],"src/leaflet/vectors/polylines.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createRoute = void 0;
+
+var _markers = require("../ui/markers");
+
+var createRoute = function createRoute(latlngs, map) {
+  var start = latlngs[0];
+  var end = latlngs[latlngs.length - 1];
+  (0, _markers.addMarker)(start, 'start', map);
+  (0, _markers.addMarker)(end, 'end', map);
   var polyline = L.polyline(latlngs, {
     color: 'red'
   }).addTo(map);
   map.fitBounds(polyline.getBounds());
 };
 
-exports.addPolyline = addPolyline;
-},{}],"src/app.js":[function(require,module,exports) {
+exports.createRoute = createRoute;
+},{"../ui/markers":"src/leaflet/ui/markers.js"}],"src/app.js":[function(require,module,exports) {
 "use strict";
 
 var _leaflet = _interopRequireDefault(require("leaflet"));
@@ -16323,7 +16391,9 @@ var _axios = _interopRequireDefault(require("axios"));
 
 var _locations = _interopRequireDefault(require("./data/locations.json"));
 
-var _polyline = require("./leaflet/polyline");
+var _markers = require("../src/leaflet/ui/markers");
+
+var _polylines = require("./leaflet/vectors/polylines");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -16349,6 +16419,7 @@ var destinations = [];
 _locations.default.forEach(function (location, index) {
   var key = "destination".concat(index + 1);
   var value = "location_".concat(index, ";").concat(location.Latitude, ",").concat(location.Longitude);
+  (0, _markers.addMarker)([location.Latitude, location.Longitude], 'normal', map);
   destinations.push(_defineProperty({}, key, value));
 });
 
@@ -16377,11 +16448,11 @@ _axios.default.get(base + destinationsQuery, {
   response.data.results[0].waypoints.forEach(function (point) {
     latlngs.push([point.lat, point.lng]);
   });
-  (0, _polyline.addPolyline)(latlngs, map);
+  (0, _polylines.createRoute)(latlngs, map);
 }).catch(function (error) {
   console.log(error);
 });
-},{"leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/leaflet.css":"../node_modules/leaflet/dist/leaflet.css","axios":"../node_modules/axios/index.js","./data/locations.json":"src/data/locations.json","./leaflet/polyline":"src/leaflet/polyline.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/leaflet.css":"../node_modules/leaflet/dist/leaflet.css","axios":"../node_modules/axios/index.js","./data/locations.json":"src/data/locations.json","../src/leaflet/ui/markers":"src/leaflet/ui/markers.js","./leaflet/vectors/polylines":"src/leaflet/vectors/polylines.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -16409,7 +16480,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "2326" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "20749" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
