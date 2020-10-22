@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Map, TileLayer } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet.awesome-markers';
+import { Map, TileLayer, Marker, FeatureGroup } from 'react-leaflet';
 
 import { Button, Space, Upload, Table } from 'antd';
 
@@ -8,21 +10,38 @@ import { InboxOutlined } from '@ant-design/icons';
 import { csvToJson } from '../helpers/parser';
 
 import './app.scss';
-
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'antd/dist/antd.css';
+
+const markerIcon = new L.AwesomeMarkers.icon({
+  icon: 'car',
+  prefix: 'fa',
+  markerColor: 'blue',
+});
 
 const App = () => {
   const { Dragger } = Upload;
 
-  const [position, setPosition] = useState([28.7041, 77.1025]);
+  const [viewport, setViewport] = useState({
+    center: [39.66385, -75.56709],
+    zoom: 9,
+  });
+
   const [file, setFile] = useState({});
   const [fileList, setFileList] = useState([]);
+
   const [locations, setLocations] = useState([]);
+
   const [isTableDataPresent, setIsTableDataPresent] = useState(false);
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [tableColumns, setTableColumns] = useState([]);
   const [tableData, setTableData] = useState([]);
+
+  const [areMarkersVisible, setAreMarkersVisible] = useState(false);
+
+  const mapRef = useRef();
+  const markersRef = useRef();
 
   useEffect(() => {
     populateTable(locations);
@@ -30,7 +49,6 @@ const App = () => {
 
   useEffect(() => {
     if (Object.keys(file).length === 0 && file.constructor === Object) {
-      // console.log('file is empty');
       setIsTableDataPresent(false);
       setLocations([]);
     } else {
@@ -46,7 +64,6 @@ const App = () => {
   useEffect(() => {
     if (fileList.length === 1) {
       setFile(fileList[0]['originFileObj']);
-      console.log('filelist modified');
     } else {
       setIsTableDataPresent(false);
       setLocations([]);
@@ -55,9 +72,7 @@ const App = () => {
 
   function fileUploadHandler(event) {
     let fileList = [...event.fileList];
-
     fileList = fileList.slice(-1);
-
     setFileList(fileList);
   }
 
@@ -66,6 +81,26 @@ const App = () => {
       setIsTableVisible(false);
     } else {
       setIsTableVisible(true);
+    }
+  }
+
+  function toggleMarkersVisibility() {
+    if (areMarkersVisible) {
+      setAreMarkersVisible(false);
+    } else {
+      setAreMarkersVisible(true);
+
+      if (mapRef.current && mapRef.current) {
+        const map = mapRef.current.leafletElement;
+        const markers = mapRef.current.leafletElement;
+
+        const { _northEast, _southWest } = markers.getBounds();
+
+        map.flyToBounds([
+          [_northEast.lat, _northEast.lng],
+          [_southWest.lat, _southWest.lng],
+        ]);
+      }
     }
   }
 
@@ -103,11 +138,22 @@ const App = () => {
 
   return (
     <div className='wrapper'>
-      <Map id='map' center={position} zoom={8}>
+      <Map id='map' ref={mapRef} viewport={viewport}>
         <TileLayer
           url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
+        <FeatureGroup ref={markersRef}>
+          {isTableDataPresent && areMarkersVisible
+            ? locations.map((location, index) => (
+                <Marker
+                  key={index}
+                  icon={markerIcon}
+                  position={[location.Latitude, location.Longitude]}
+                ></Marker>
+              ))
+            : null}
+        </FeatureGroup>
       </Map>
       <div id='controls'>
         <div className='left'>
@@ -137,13 +183,18 @@ const App = () => {
             >
               {isTableVisible ? 'Hide' : 'Show'} table
             </Button>
-            <Button type='primary' disabled={!isTableDataPresent ? true : false}>
+            <Button
+              type='primary'
+              onClick={() => toggleMarkersVisibility()}
+              disabled={!isTableDataPresent ? true : false}
+            >
               Display markers
             </Button>
             <Button type='primary' disabled={!isTableDataPresent ? true : false}>
               Create Route
             </Button>
           </Space>
+
           {isTableVisible && isTableDataPresent ? (
             <Table columns={tableColumns} dataSource={tableData} />
           ) : null}
