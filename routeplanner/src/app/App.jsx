@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import 'leaflet.awesome-markers';
-import { Map, TileLayer, Marker, FeatureGroup } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import { Map, TileLayer, Marker, FeatureGroup, Polyline } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
+
+import { points } from '@turf/helpers';
+import pointsWithinPolygon from '@turf/points-within-polygon';
 
 import { Button, Space, Upload, Table } from 'antd';
-
 import { InboxOutlined } from '@ant-design/icons';
 
 import { csvToJson } from '../helpers/parser';
+import { getRoute } from '../helpers/getRoute';
 
 import './app.scss';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'leaflet.awesome-markers';
 import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'antd/dist/antd.css';
 
@@ -28,10 +33,16 @@ const App = () => {
     zoom: 9,
   });
 
+  const [mapBounds, setMapBounds] = useState([]);
+  const [waypoints, setWaypoints] = useState([]);
+
   const [file, setFile] = useState({});
   const [fileList, setFileList] = useState([]);
 
   const [locations, setLocations] = useState([]);
+
+  const [allPoints, setAllPoints] = useState({});
+  const [selectedPoints, setSelectedPoints] = useState([]);
 
   const [isTableDataPresent, setIsTableDataPresent] = useState(false);
   const [isTableVisible, setIsTableVisible] = useState(false);
@@ -39,13 +50,43 @@ const App = () => {
   const [tableData, setTableData] = useState([]);
 
   const [areMarkersVisible, setAreMarkersVisible] = useState(false);
+  const [isRouteVisible, setIsRouteVisible] = useState(false);
 
   const mapRef = useRef();
-  const markersRef = useRef();
 
   useEffect(() => {
     populateTable(locations);
+
+    if (locations.length > 0) {
+      loadRoute();
+
+      let pointsFromLocations = [];
+
+      locations.forEach((location) => {
+        pointsFromLocations.push([location.Longitude, location.Latitude]);
+      });
+
+      setAllPoints(points(pointsFromLocations));
+    }
   }, [locations]);
+
+  useEffect(() => {
+    console.log(allPoints);
+  }, [allPoints]);
+
+  useEffect(() => {
+    console.log(selectedPoints);
+  }, [selectedPoints]);
+
+  useEffect(() => {
+    const map = mapRef.current.leafletElement;
+
+    if (!(Object.keys(file).length === 0 && file.constructor === Object)) {
+      if (map.getBounds() !== mapBounds) {
+        map.flyToBounds(mapBounds);
+      }
+    }
+  }, [mapBounds]);
 
   useEffect(() => {
     if (Object.keys(file).length === 0 && file.constructor === Object) {
@@ -70,6 +111,21 @@ const App = () => {
     }
   }, [fileList]);
 
+  async function loadRoute() {
+    let route = await getRoute(locations);
+    setWaypoints(route);
+  }
+
+  function shapeDrawHandler(event) {
+    let layer = event.layer;
+
+    setSelectedPoints(pointsWithinPolygon(allPoints, layer.toGeoJSON()));
+  }
+
+  function shapeEditHandler(event) {
+    console.log(event);
+  }
+
   function fileUploadHandler(event) {
     let fileList = [...event.fileList];
     fileList = fileList.slice(-1);
@@ -89,18 +145,26 @@ const App = () => {
       setAreMarkersVisible(false);
     } else {
       setAreMarkersVisible(true);
+    }
+  }
 
-      if (mapRef.current && mapRef.current) {
-        const map = mapRef.current.leafletElement;
-        const markers = mapRef.current.leafletElement;
+  function toggleRouteVisibility() {
+    if (isRouteVisible) {
+      setIsRouteVisible(false);
+    } else {
+      setIsRouteVisible(true);
+    }
+  }
 
-        const { _northEast, _southWest } = markers.getBounds();
-
-        map.flyToBounds([
-          [_northEast.lat, _northEast.lng],
-          [_southWest.lat, _southWest.lng],
-        ]);
-      }
+  function mapBoundsHandler(e) {
+    try {
+      const { _northEast, _southWest } = e.target.getBounds();
+      setMapBounds([
+        [_northEast.lat, _northEast.lng],
+        [_southWest.lat, _southWest.lng],
+      ]);
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -114,11 +178,9 @@ const App = () => {
 
       let data = locations.map((item, index) => {
         let row = {};
-
         for (let key of Object.keys(item)) {
           row[camelize(key)] = item[key];
         }
-
         row['key'] = index + 1;
         return row;
       });
@@ -143,17 +205,35 @@ const App = () => {
           url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
-        <FeatureGroup ref={markersRef}>
-          {isTableDataPresent && areMarkersVisible
-            ? locations.map((location, index) => (
-                <Marker
-                  key={index}
-                  icon={markerIcon}
-                  position={[location.Latitude, location.Longitude]}
-                ></Marker>
-              ))
-            : null}
+        <FeatureGroup>
+          <EditControl
+            position='topright'
+            draw={{
+              rectangle: true,
+              polygon: true,
+              polyline: false,
+              circle: false,
+              marker: false,
+              circlemarker: false,
+            }}
+            onCreated={(e) => shapeDrawHandler(e)}
+            onEdited={(e) => shapeEditHandler(e)}
+          />
         </FeatureGroup>
+        {areMarkersVisible && (
+          <FeatureGroup onadd={(e) => mapBoundsHandler(e)}>
+            {locations.map((location, index) => (
+              <Marker
+                key={index}
+                icon={markerIcon}
+                position={[location.Latitude, location.Longitude]}
+              ></Marker>
+            ))}
+          </FeatureGroup>
+        )}
+        {isRouteVisible && (
+          <Polyline color='blue' onadd={(e) => mapBoundsHandler(e)} positions={waypoints} />
+        )}
       </Map>
       <div id='controls'>
         <div className='left'>
@@ -188,10 +268,14 @@ const App = () => {
               onClick={() => toggleMarkersVisibility()}
               disabled={!isTableDataPresent ? true : false}
             >
-              Display markers
+              {areMarkersVisible ? 'Hide' : 'Display'} markers
             </Button>
-            <Button type='primary' disabled={!isTableDataPresent ? true : false}>
-              Create Route
+            <Button
+              type='primary'
+              onClick={() => toggleRouteVisibility()}
+              disabled={!isTableDataPresent ? true : false}
+            >
+              {isRouteVisible ? 'Hide' : 'Show'} routes
             </Button>
           </Space>
 

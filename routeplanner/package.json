@@ -12,12 +12,16 @@
     "sass": "^1.27.0"
   },
   "dependencies": {
+    "@turf/helpers": "^6.1.4",
+    "@turf/points-within-polygon": "^5.1.5",
     "antd": "^4.7.2",
     "axios": "^0.20.0",
     "leaflet": "^1.7.1",
+    "leaflet-draw": "^1.0.4",
     "leaflet.awesome-markers": "^2.0.5",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
-    "react-leaflet": "^2.7.0"
+    "react-leaflet": "^2.7.0",
+    "react-leaflet-draw": "^0.19.0"
   }
 }
