@@ -3,14 +3,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Map, TileLayer, Marker, FeatureGroup, Polyline } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 
-import { points } from '@turf/helpers';
+import { points, feature } from '@turf/helpers';
 import pointsWithinPolygon from '@turf/points-within-polygon';
 
 import { Button, Space, Upload, Table } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 
+import { unparse } from 'papaparse';
 import { csvToJson } from '../helpers/parser';
-import { getRoute } from '../helpers/getRoute';
+import { getRoute } from '../helpers/hereapi';
 
 import './app.scss';
 import 'leaflet/dist/leaflet.css';
@@ -19,6 +20,8 @@ import 'leaflet.awesome-markers';
 import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'antd/dist/antd.css';
 
+const { Dragger } = Upload;
+
 const markerIcon = new L.AwesomeMarkers.icon({
   icon: 'car',
   prefix: 'fa',
@@ -26,8 +29,6 @@ const markerIcon = new L.AwesomeMarkers.icon({
 });
 
 const App = () => {
-  const { Dragger } = Upload;
-
   const [viewport, setViewport] = useState({
     center: [39.66385, -75.56709],
     zoom: 9,
@@ -35,22 +36,32 @@ const App = () => {
 
   const [mapBounds, setMapBounds] = useState([]);
   const [waypoints, setWaypoints] = useState([]);
+  const [selectedWaypoints, setSelectedWaypoints] = useState([]);
+  const [wayPointsLoading, setwayPointsLoading] = useState(false);
+  const [selectedWayPointsLoading, setSelectedWayPointsLoading] = useState(false);
 
   const [file, setFile] = useState({});
   const [fileList, setFileList] = useState([]);
 
   const [locations, setLocations] = useState([]);
+  const [selectedLocations, setSelectedLocations] = useState([]);
 
   const [allPoints, setAllPoints] = useState({});
-  const [selectedPoints, setSelectedPoints] = useState([]);
+  const [selectedPoints, setSelectedPoints] = useState({});
 
   const [isTableDataPresent, setIsTableDataPresent] = useState(false);
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [tableColumns, setTableColumns] = useState([]);
   const [tableData, setTableData] = useState([]);
 
+  // const [isTableDataPresent, setIsTableDataPresent] = useState(false);
+  // const [isTableVisible, setIsTableVisible] = useState(false);
+  // const [tableColumns, setTableColumns] = useState([]);
+  // const [tableData, setTableData] = useState([]);
+
   const [areMarkersVisible, setAreMarkersVisible] = useState(false);
   const [isRouteVisible, setIsRouteVisible] = useState(false);
+  const [isSelectedRouteVisible, setIsSelectedRouteVisible] = useState(false);
 
   const mapRef = useRef();
 
@@ -58,7 +69,7 @@ const App = () => {
     populateTable(locations);
 
     if (locations.length > 0) {
-      loadRoute();
+      loadRoute(locations);
 
       let pointsFromLocations = [];
 
@@ -71,11 +82,32 @@ const App = () => {
   }, [locations]);
 
   useEffect(() => {
-    console.log(allPoints);
-  }, [allPoints]);
+    if (selectedLocations.length > 0) {
+      loadSelectedRoute(selectedLocations);
+    }
+  }, [selectedLocations]);
 
   useEffect(() => {
-    console.log(selectedPoints);
+    if (!(Object.keys(selectedPoints).length === 0 && selectedPoints.constructor === Object)) {
+      let intersectArray = [];
+
+      let selectedPointsString = JSON.stringify(selectedPoints.features);
+
+      locations.forEach((location) => {
+        let geometryL = {
+          type: 'Point',
+          coordinates: [location.Longitude, location.Latitude],
+        };
+
+        let featureL = JSON.stringify(feature(geometryL));
+
+        if (selectedPointsString.includes(featureL)) {
+          intersectArray.push(location);
+        }
+      });
+
+      setSelectedLocations(intersectArray);
+    }
   }, [selectedPoints]);
 
   useEffect(() => {
@@ -111,25 +143,47 @@ const App = () => {
     }
   }, [fileList]);
 
-  async function loadRoute() {
+  async function loadRoute(locations) {
+    setwayPointsLoading(true);
     let route = await getRoute(locations);
     setWaypoints(route);
+    setwayPointsLoading(false);
+  }
+
+  async function loadSelectedRoute(locations) {
+    setSelectedWayPointsLoading(true);
+    let route = await getRoute(locations);
+    setSelectedWaypoints(route);
+    setSelectedWayPointsLoading(false);
   }
 
   function shapeDrawHandler(event) {
-    let layer = event.layer;
-
-    setSelectedPoints(pointsWithinPolygon(allPoints, layer.toGeoJSON()));
+    setSelectedPoints(pointsWithinPolygon(allPoints, event.layer.toGeoJSON()));
   }
 
   function shapeEditHandler(event) {
-    console.log(event);
+    // console.log(event);
   }
 
   function fileUploadHandler(event) {
     let fileList = [...event.fileList];
     fileList = fileList.slice(-1);
     setFileList(fileList);
+  }
+
+  function fileDownloadHandler() {
+    let text = unparse(selectedLocations);
+
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', 'routes.csv');
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
   }
 
   function toggleTableVisibility() {
@@ -153,6 +207,13 @@ const App = () => {
       setIsRouteVisible(false);
     } else {
       setIsRouteVisible(true);
+    }
+  }
+  function toggleSelectedRouteVisibility() {
+    if (isSelectedRouteVisible) {
+      setIsSelectedRouteVisible(false);
+    } else {
+      setIsSelectedRouteVisible(true);
     }
   }
 
@@ -234,6 +295,14 @@ const App = () => {
         {isRouteVisible && (
           <Polyline color='blue' onadd={(e) => mapBoundsHandler(e)} positions={waypoints} />
         )}
+
+        {isSelectedRouteVisible && (
+          <Polyline
+            color='green'
+            onadd={(e) => mapBoundsHandler(e)}
+            positions={selectedWaypoints}
+          />
+        )}
       </Map>
       <div id='controls'>
         <div className='left'>
@@ -258,24 +327,43 @@ const App = () => {
           <Space>
             <Button
               type='primary'
-              disabled={!isTableDataPresent ? true : false}
+              disabled={isTableDataPresent ? false : true}
               onClick={() => toggleTableVisibility()}
             >
-              {isTableVisible ? 'Hide' : 'Show'} table
+              {isTableVisible ? 'Hide' : 'Show'} complete table
             </Button>
             <Button
               type='primary'
               onClick={() => toggleMarkersVisibility()}
-              disabled={!isTableDataPresent ? true : false}
+              disabled={isTableDataPresent ? false : true}
             >
               {areMarkersVisible ? 'Hide' : 'Display'} markers
             </Button>
             <Button
               type='primary'
               onClick={() => toggleRouteVisibility()}
-              disabled={!isTableDataPresent ? true : false}
+              disabled={isTableDataPresent ? false : true}
+              loading={wayPointsLoading}
             >
-              {isRouteVisible ? 'Hide' : 'Show'} routes
+              {isRouteVisible ? 'Hide' : 'Show'} complete route
+            </Button>
+            <Button
+              type='primary'
+              disabled={isTableDataPresent ? false : true}
+              onClick={() => toggleTableVisibility()}
+            >
+              {isTableVisible ? 'Hide' : 'Show'} selected table
+            </Button>
+            <Button
+              type='primary'
+              onClick={() => toggleSelectedRouteVisibility()}
+              disabled={isTableDataPresent ? false : true}
+              loading={selectedWayPointsLoading}
+            >
+              {isSelectedRouteVisible ? 'Hide' : 'Show'} selected route
+            </Button>
+            <Button type='primary' onClick={() => fileDownloadHandler()}>
+              Download Routes
             </Button>
           </Space>
 

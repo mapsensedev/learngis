@@ -23,3 +23,21 @@ export const csvToJson = (csv) => {
 
   return result;
 };
+
+export const toCsv = (json) => {
+  // console.log(json);
+
+  const array = typeof json !== 'object' ? JSON.parse(json) : json;
+  let str =
+    `${Object.keys(array[0])
+      .map((value) => `"${value}"`)
+      .join(',')}` + '\r\n';
+
+  return array.reduce((str, next) => {
+    str +=
+      `${Object.values(next)
+        .map((value) => `"${value}"`)
+        .join(',')}` + '\r\n';
+    return str;
+  }, str);
+};
