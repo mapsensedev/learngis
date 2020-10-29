@@ -1,18 +1,27 @@
 import axios from 'axios';
 
-export const getRoute = async (locations) => {
+export const getRoute = async (locations, source) => {
+  // persisting waypoints to avoid frequent api calls
+
+  if (window.localStorage.getItem('latlngs')) {
+    return JSON.parse(window.localStorage.getItem('latlngs'));
+  }
+
   let destinations = [];
   let latlngs = [];
+
   let start = '';
+
+  if (source) {
+    start = `location_start;${source[0]},${source[1]}`;
+  } else {
+    start = `location_start;${locations[0].Latitude},${locations[0].Longitude}`;
+  }
 
   locations.forEach((location, index) => {
     let key = `destination${index + 1}`;
     let value = `location_${index};${location.Latitude},${location.Longitude}`;
     destinations.push({ [key]: value });
-
-    if (index === 0) {
-      start = `location_start;${location.Latitude},${location.Longitude}`;
-    }
   });
 
   const base = 'https://wse.ls.hereapi.com/2/findsequence.json';
@@ -48,6 +57,8 @@ export const getRoute = async (locations) => {
   } catch (error) {
     console.log(error);
   }
+
+  window.localStorage.setItem('latlngs', JSON.stringify(latlngs));
 
   return latlngs;
 };

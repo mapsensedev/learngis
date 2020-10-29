@@ -1,13 +1,17 @@
 import L from 'leaflet';
+import 'leaflet.polyline.snakeanim/L.Polyline.SnakeAnim.js';
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, TileLayer, Marker, FeatureGroup, Polyline } from 'react-leaflet';
+import { Map, TileLayer, FeatureGroup, Polyline, Marker } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 
 import { points, feature } from '@turf/helpers';
 import pointsWithinPolygon from '@turf/points-within-polygon';
 
-import { Button, Space, Upload, Table } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
+import { Button, Space, Upload, Table, Affix } from 'antd';
+import { InboxOutlined, PlusCircleFilled } from '@ant-design/icons';
+
+import PolylineSnake from '../components/polyline-snake/PolylineSnake';
 
 import { unparse } from 'papaparse';
 import { csvToJson } from '../helpers/parser';
@@ -22,11 +26,17 @@ import 'antd/dist/antd.css';
 
 const { Dragger } = Upload;
 
-const markerIcon = new L.AwesomeMarkers.icon({
-  icon: 'car',
-  prefix: 'fa',
-  markerColor: 'blue',
-});
+const numberedIcon = (label) => {
+  return L.divIcon({
+    html: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50">
+            <circle cx="25" cy="25" r="25" fill="#000000" />
+            <text x="50%" y="50%" text-anchor="middle" fill="white" font-size="25px" dy=".3em">${label}</text>
+        </svg>
+    `.trim(),
+    className: '',
+  });
+};
 
 const App = () => {
   const [viewport, setViewport] = useState({
@@ -286,16 +296,21 @@ const App = () => {
             {locations.map((location, index) => (
               <Marker
                 key={index}
-                icon={markerIcon}
+                icon={numberedIcon(index)}
                 position={[location.Latitude, location.Longitude]}
               ></Marker>
             ))}
           </FeatureGroup>
         )}
-        {isRouteVisible && (
-          <Polyline color='blue' onadd={(e) => mapBoundsHandler(e)} positions={waypoints} />
-        )}
 
+        {/* {isRouteVisible && (
+            <Polyline
+              color='blue'
+              positions={waypoints}
+              onadd={(e) => mapBoundsHandler(e)}
+            />
+          )} */}
+        {isRouteVisible ? <PolylineSnake waypoints={waypoints} trigger={isRouteVisible} /> : null}
         {isSelectedRouteVisible && (
           <Polyline
             color='green'
@@ -339,13 +354,21 @@ const App = () => {
             >
               {areMarkersVisible ? 'Hide' : 'Display'} markers
             </Button>
-            <Button
+            {/* <Button
               type='primary'
               onClick={() => toggleRouteVisibility()}
               disabled={isTableDataPresent ? false : true}
               loading={wayPointsLoading}
             >
               {isRouteVisible ? 'Hide' : 'Show'} complete route
+            </Button> */}
+            <Button
+              type='primary'
+              onClick={() => toggleRouteVisibility()}
+              disabled={isTableDataPresent ? false : true}
+              loading={wayPointsLoading}
+            >
+              Draw route
             </Button>
             <Button
               type='primary'
@@ -372,6 +395,13 @@ const App = () => {
           ) : null}
         </div>
       </div>
+      {/* <Affix style={{ position: 'absolute', bottom: 60, right: 60 }}>
+        <Button
+          type='text'
+          shape='circle'
+          icon={<PlusCircleFilled style={{ fontSize: '42px', color: '#1890ff' }} />}
+        />
+      </Affix> */}
     </div>
   );
 };

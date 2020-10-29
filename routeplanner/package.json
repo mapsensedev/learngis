@@ -19,10 +19,12 @@
     "leaflet": "^1.7.1",
     "leaflet-draw": "^1.0.4",
     "leaflet.awesome-markers": "^2.0.5",
+    "leaflet.polyline.snakeanim": "^0.2.0",
     "papaparse": "^5.3.0",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
     "react-leaflet": "^2.7.0",
-    "react-leaflet-draw": "^0.19.0"
+    "react-leaflet-draw": "^0.19.0",
+    "use-leaflet": "^1.6.1"
   }
 }
