@@ -8,14 +8,12 @@ import { EditControl } from 'react-leaflet-draw';
 import { points, feature } from '@turf/helpers';
 import pointsWithinPolygon from '@turf/points-within-polygon';
 
-import { Button, Space, Upload, Table, Affix } from 'antd';
-import { InboxOutlined, PlusCircleFilled } from '@ant-design/icons';
-
-import PolylineSnake from '../components/polyline-snake/PolylineSnake';
+import { Button, Space, Upload, Table } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 
 import { unparse } from 'papaparse';
 import { csvToJson } from '../helpers/parser';
-import { getRoute } from '../helpers/hereapi';
+import { findSequence, calculateRoute } from '../helpers/hereapi';
 
 import './app.scss';
 import 'leaflet/dist/leaflet.css';
@@ -29,10 +27,10 @@ const { Dragger } = Upload;
 const numberedIcon = (label) => {
   return L.divIcon({
     html: `
-        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50">
-            <circle cx="25" cy="25" r="25" fill="#000000" />
-            <text x="50%" y="50%" text-anchor="middle" fill="white" font-size="25px" dy=".3em">${label}</text>
-        </svg>
+    <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" >
+    <circle id="svg_1" r="20" cy="20" cx="20" fill="#000000"/>
+    <text font-style="normal" text-anchor="middle" font-family="Fantasy" font-size="22px" id="svg_3" y="31.63033" x="22.60228" fill="white" transform="matrix(0.836112, 0, 0, 0.836112, 1.13815, 0.832262)">${label}</text>
+  </svg>
     `.trim(),
     className: '',
   });
@@ -52,6 +50,7 @@ const App = () => {
 
   const [file, setFile] = useState({});
   const [fileList, setFileList] = useState([]);
+  const [isFileAvailable, setIsFileAvailable] = useState(false);
 
   const [locations, setLocations] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
@@ -64,6 +63,8 @@ const App = () => {
   const [tableColumns, setTableColumns] = useState([]);
   const [tableData, setTableData] = useState([]);
 
+  const [routeData, setRouteData] = useState([]);
+
   // const [isTableDataPresent, setIsTableDataPresent] = useState(false);
   // const [isTableVisible, setIsTableVisible] = useState(false);
   // const [tableColumns, setTableColumns] = useState([]);
@@ -71,13 +72,50 @@ const App = () => {
 
   const [areMarkersVisible, setAreMarkersVisible] = useState(false);
   const [isRouteVisible, setIsRouteVisible] = useState(false);
+  const [routeDrawTrigger, setRouteDrawTrigger] = useState(false);
   const [isSelectedRouteVisible, setIsSelectedRouteVisible] = useState(false);
 
   const mapRef = useRef();
 
-  useEffect(() => {
-    populateTable(locations);
+  useEffect(async () => {
+    if (!routeDrawTrigger) {
+      return;
+    }
+    const map = mapRef.current.leafletElement;
+    let coordinates = await calculateRoute(waypoints);
+    var line = new L.polyline(coordinates, { snakingSpeed: 200 });
+    map.addLayer(line);
+    line.snakeIn();
+  }, [routeDrawTrigger]);
 
+  useEffect(() => {
+    populateTable(routeData);
+  }, [routeData]);
+
+  useEffect(() => {
+    if (waypoints.length > 0) {
+      let result = [];
+      let priority = 1;
+
+      // todo : issue regarding duplicacy
+      waypoints.forEach((point) => {
+        locations.forEach((location) => {
+          let main = Object.values(location);
+          if (main.includes(point[0].toString()) && main.includes(point[1].toString())) {
+            location['Priority'] = priority;
+            result.push(location);
+            priority++;
+          }
+        });
+      });
+
+      setRouteData(result);
+      setIsTableDataPresent(true);
+    }
+  }, [waypoints]);
+
+  useEffect(() => {
+    // populateTable(locations);
     if (locations.length > 0) {
       loadRoute(locations);
 
@@ -132,7 +170,7 @@ const App = () => {
 
   useEffect(() => {
     if (Object.keys(file).length === 0 && file.constructor === Object) {
-      setIsTableDataPresent(false);
+      setIsFileAvailable(false);
       setLocations([]);
     } else {
       const reader = new FileReader();
@@ -140,7 +178,7 @@ const App = () => {
       reader.onload = () => {
         setLocations(csvToJson(reader.result));
       };
-      setIsTableDataPresent(true);
+      setIsFileAvailable(true);
     }
   }, [file]);
 
@@ -148,21 +186,21 @@ const App = () => {
     if (fileList.length === 1) {
       setFile(fileList[0]['originFileObj']);
     } else {
-      setIsTableDataPresent(false);
+      setIsFileAvailable(false);
       setLocations([]);
     }
   }, [fileList]);
 
   async function loadRoute(locations) {
     setwayPointsLoading(true);
-    let route = await getRoute(locations);
+    let route = await findSequence(locations);
     setWaypoints(route);
     setwayPointsLoading(false);
   }
 
   async function loadSelectedRoute(locations) {
     setSelectedWayPointsLoading(true);
-    let route = await getRoute(locations);
+    let route = await findSequence(locations);
     setSelectedWaypoints(route);
     setSelectedWayPointsLoading(false);
   }
@@ -182,7 +220,7 @@ const App = () => {
   }
 
   function fileDownloadHandler() {
-    let text = unparse(selectedLocations);
+    let text = unparse(routeData);
 
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -293,31 +331,25 @@ const App = () => {
         </FeatureGroup>
         {areMarkersVisible && (
           <FeatureGroup onadd={(e) => mapBoundsHandler(e)}>
-            {locations.map((location, index) => (
+            {waypoints.map((point, index) => (
               <Marker
                 key={index}
                 icon={numberedIcon(index)}
-                position={[location.Latitude, location.Longitude]}
+                position={[point[0], point[1]]}
               ></Marker>
             ))}
           </FeatureGroup>
         )}
-
         {/* {isRouteVisible && (
-            <Polyline
-              color='blue'
-              positions={waypoints}
-              onadd={(e) => mapBoundsHandler(e)}
-            />
-          )} */}
-        {isRouteVisible ? <PolylineSnake waypoints={waypoints} trigger={isRouteVisible} /> : null}
-        {isSelectedRouteVisible && (
+          <Polyline color='red' positions={waypoints} onadd={(e) => mapBoundsHandler(e)} />
+        )} */}
+        {/* {isSelectedRouteVisible && (
           <Polyline
             color='green'
             onadd={(e) => mapBoundsHandler(e)}
             positions={selectedWaypoints}
           />
-        )}
+        )} */}
       </Map>
       <div id='controls'>
         <div className='left'>
@@ -344,13 +376,15 @@ const App = () => {
               type='primary'
               disabled={isTableDataPresent ? false : true}
               onClick={() => toggleTableVisibility()}
+              loading={wayPointsLoading}
             >
-              {isTableVisible ? 'Hide' : 'Show'} complete table
+              {isTableVisible ? 'Hide' : 'Show'} table
             </Button>
             <Button
               type='primary'
               onClick={() => toggleMarkersVisibility()}
               disabled={isTableDataPresent ? false : true}
+              loading={wayPointsLoading}
             >
               {areMarkersVisible ? 'Hide' : 'Display'} markers
             </Button>
@@ -364,29 +398,34 @@ const App = () => {
             </Button> */}
             <Button
               type='primary'
-              onClick={() => toggleRouteVisibility()}
+              onClick={() => setRouteDrawTrigger(true)}
               disabled={isTableDataPresent ? false : true}
               loading={wayPointsLoading}
             >
               Draw route
             </Button>
-            <Button
+            {/* <Button
               type='primary'
               disabled={isTableDataPresent ? false : true}
               onClick={() => toggleTableVisibility()}
             >
               {isTableVisible ? 'Hide' : 'Show'} selected table
-            </Button>
-            <Button
+            </Button> */}
+            {/* <Button
               type='primary'
               onClick={() => toggleSelectedRouteVisibility()}
               disabled={isTableDataPresent ? false : true}
               loading={selectedWayPointsLoading}
             >
               {isSelectedRouteVisible ? 'Hide' : 'Show'} selected route
-            </Button>
-            <Button type='primary' onClick={() => fileDownloadHandler()}>
-              Download Routes
+            </Button> */}
+            <Button
+              type='primary'
+              onClick={() => fileDownloadHandler()}
+              disabled={isTableDataPresent ? false : true}
+              loading={wayPointsLoading}
+            >
+              Download Route
             </Button>
           </Space>
 

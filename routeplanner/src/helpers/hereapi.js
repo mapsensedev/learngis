@@ -1,14 +1,13 @@
 import axios from 'axios';
 
-export const getRoute = async (locations, source) => {
+export const findSequence = async (locations, source) => {
   // persisting waypoints to avoid frequent api calls
-
-  if (window.localStorage.getItem('latlngs')) {
-    return JSON.parse(window.localStorage.getItem('latlngs'));
-  }
+  // if (window.localStorage.getItem('latlngs')) {
+  //   return JSON.parse(window.localStorage.getItem('latlngs'));
+  // }
 
   let destinations = [];
-  let latlngs = [];
+  let sequence = [];
 
   let start = '';
 
@@ -16,6 +15,7 @@ export const getRoute = async (locations, source) => {
     start = `location_start;${source[0]},${source[1]}`;
   } else {
     start = `location_start;${locations[0].Latitude},${locations[0].Longitude}`;
+    locations.shift();
   }
 
   locations.forEach((location, index) => {
@@ -52,13 +52,56 @@ export const getRoute = async (locations, source) => {
     });
 
     response.data.results[0].waypoints.forEach((point) => {
-      latlngs.push([point.lat, point.lng]);
+      sequence.push([point.lat, point.lng]);
     });
   } catch (error) {
     console.log(error);
   }
 
-  window.localStorage.setItem('latlngs', JSON.stringify(latlngs));
+  // window.localStorage.setItem('latlngs', JSON.stringify(latlngs));
 
-  return latlngs;
+  return sequence;
+};
+
+export const calculateRoute = async (locations, source) => {
+  let waypoints = [];
+  let track = [];
+
+  locations.forEach((location, index) => {
+    let key = `waypoint${index}`;
+    let value = `geo!${location[0]},${location[1]}`;
+    waypoints.push({ [key]: value });
+  });
+
+  const base = 'https://route.ls.hereapi.com/routing/7.2/calculateroute.json';
+
+  const mode_type = 'fastest'; //
+
+  const transport_mode = 'car'; //
+
+  const traffic_mode = 'traffic:disabled'; //
+
+  const mode = `${mode_type};${transport_mode};${traffic_mode}`; //
+
+  let waypointsQuery = '?';
+
+  waypoints.forEach((pair) => {
+    waypointsQuery += `${Object.keys(pair)}=${Object.values(pair)}&`;
+  });
+
+  try {
+    const response = await axios.get(base + waypointsQuery, {
+      params: {
+        apiKey: 'iqsfhgYI61lMTK_REl1S9WxXinHvxC5SA6VOXt0U_10',
+        mode: mode,
+        representation: 'display',
+      },
+    });
+
+    track = response.data.response.route[0].shape.map((point) => point.split(','));
+  } catch (error) {
+    console.log(error);
+  }
+
+  return track;
 };
