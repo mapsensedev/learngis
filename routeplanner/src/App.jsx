@@ -12,10 +12,10 @@ import { Button, Space, Upload, Table } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 
 import { unparse } from 'papaparse';
-import { csvToJson } from '../helpers/parser';
-import { findSequence, calculateRoute } from '../helpers/hereapi';
+import { csvToJson } from './helpers/parser';
+import { findSequence, calculateRoute } from './helpers/hereapi';
 
-import './app.scss';
+import './App.scss';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet.awesome-markers';
@@ -77,15 +77,11 @@ const App = () => {
 
   const mapRef = useRef();
 
-  useEffect(async () => {
+  useEffect(() => {
     if (!routeDrawTrigger) {
       return;
     }
-    const map = mapRef.current.leafletElement;
-    let coordinates = await calculateRoute(waypoints);
-    var line = new L.polyline(coordinates, { snakingSpeed: 200 });
-    map.addLayer(line);
-    line.snakeIn();
+    drawRoute();
   }, [routeDrawTrigger]);
 
   useEffect(() => {
@@ -94,19 +90,24 @@ const App = () => {
 
   useEffect(() => {
     if (waypoints.length > 0) {
+      let locations = locations;
       let result = [];
       let priority = 1;
 
+      for (let location of locations) {
+        let index = locations.indexOf(location);
+        console.log(index);
+      }
+
       // todo : issue regarding duplicacy
       waypoints.forEach((point) => {
-        locations.forEach((location) => {
+        for (let location of locations) {
           let main = Object.values(location);
           if (main.includes(point[0].toString()) && main.includes(point[1].toString())) {
-            location['Priority'] = priority;
+            location['Priority'] = priority++;
             result.push(location);
-            priority++;
           }
-        });
+        }
       });
 
       setRouteData(result);
@@ -190,6 +191,14 @@ const App = () => {
       setLocations([]);
     }
   }, [fileList]);
+
+  async function drawRoute() {
+    const map = mapRef.current.leafletElement;
+    let coordinates = await calculateRoute(waypoints);
+    var line = new L.polyline(coordinates, { snakingSpeed: 200 });
+    map.addLayer(line);
+    line.snakeIn();
+  }
 
   async function loadRoute(locations) {
     setwayPointsLoading(true);

@@ -55,7 +55,7 @@ export const findSequence = async (locations, source) => {
       sequence.push([point.lat, point.lng]);
     });
   } catch (error) {
-    console.log(error);
+    console.log(error.response);
   }
 
   // window.localStorage.setItem('latlngs', JSON.stringify(latlngs));

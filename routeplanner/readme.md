@@ -1,11 +1,16 @@
-### Step 1
+# Getting Started with routeplanner
 
-`yarn install`
+In the project directory, you can run:
 
-### Step 2
+### `yarn start`
 
-`yarn start`
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-### Step 3
+### `yarn test`
 
-open `localhost:1234` on your favourite browser
+Launches the test runner in the interactive watch mode.\
+
+### `yarn build`
+
+Builds the app for production to the `build` folder.\
